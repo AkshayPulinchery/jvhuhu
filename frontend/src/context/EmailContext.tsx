@@ -97,16 +97,18 @@ export interface BlockchainEmail {
   mailbox: number;
   timestamp: number;
   isQuantum?: boolean;
+  isDestructive?: boolean;
 }
 
 interface EmailContextType {
   emails: BlockchainEmail[];
   loading: boolean;
   error: string | null;
-  sendEmail: (to: string, subject: string, body: string, isQuantum?: boolean) => Promise<string | void>;
+  sendEmail: (to: string, subject: string, body: string, isQuantum?: boolean, isDestructive?: boolean) => Promise<string | void>;
   reply: (threadId: number, subject: string, body: string) => Promise<void>;
   moveEmails: (mailIds: number[], box: number) => Promise<void>;
   refresh: () => Promise<void>;
+  deleteEmail: (id: number) => void;
   importEmail: (code: string) => void;
   initialized: boolean;
 }
@@ -364,7 +366,11 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
     }
   }, [walletClient, address, fetchEmails]);
 
-  const sendEmail = useCallback(async (to: string, subject: string, body: string, isQuantum: boolean = false) => {
+  const deleteEmail = useCallback((id: number) => {
+    setEmails(prev => prev.filter(e => e.id !== id));
+  }, []);
+
+  const sendEmail = useCallback(async (to: string, subject: string, body: string, isQuantum: boolean = false, isDestructive: boolean = false) => {
     if (getDemoMode()) {
       const userId = getUserId();
       
@@ -377,7 +383,8 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
         threadId: 0,
         mailbox: BOXES.SENT,
         timestamp: Date.now(),
-        isQuantum: isQuantum
+        isQuantum: isQuantum,
+        isDestructive: isDestructive
       };
       setEmails(prev => [mockEmail, ...prev]);
       setLoading(false);
@@ -515,6 +522,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       reply, 
       moveEmails, 
       refresh,
+      deleteEmail,
       importEmail,
       initialized 
     }}>

@@ -22,6 +22,7 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isQuantum, setIsQuantum] = useState(true);
+  const [isDestructive, setIsDestructive] = useState(false);
   const [demoMode, setDemoMode] = useState(true);
   const [sentCode, setSentCode] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -88,7 +89,7 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
     setError(null);
     
     try {
-      const result = await sendEmail(to, subject, body, isQuantum);
+      const result = await sendEmail(to, subject, body, isQuantum, isDestructive);
       if (demoMode && typeof result === 'string') {
         setSentCode(result);
       } else {
@@ -279,6 +280,21 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
                   onChange={() => setIsQuantum(!isQuantum)}
                 />
                 {isQuantum ? '⚛️ QUANTUM ON' : '⚛️ QUANTUM OFF'}
+              </label>
+
+              <label 
+                className={cn(
+                  "flex items-center gap-2 cursor-pointer p-2 border-[2px] border-black font-bold text-xs select-none transition-colors",
+                  isDestructive ? "bg-orange-300" : "bg-white"
+                )}
+              >
+                <input 
+                  type="checkbox" 
+                  className="hidden" 
+                  checked={isDestructive}
+                  onChange={() => setIsDestructive(!isDestructive)}
+                />
+                {isDestructive ? '💣 DESTRUCTIVE ON' : '💣 DESTRUCTIVE OFF'}
               </label>
             </div>
             
