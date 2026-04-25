@@ -344,7 +344,11 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       if (getDemoMode()) {
-        setEmails(DEMO_EMAILS);
+        // Only initialize with demo emails if the list is empty or matches initial state
+        setEmails(prev => {
+          if (prev.length > DEMO_EMAILS.length) return prev; // Keep current if we have additions
+          return DEMO_EMAILS;
+        });
         setInitialized(true);
         return;
       }
@@ -493,10 +497,21 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     
+    const importedEmail: BlockchainEmail = {
+      ...email,
+      id: Number(email.id), // Ensure it's a number for .find()
+      mailbox: BOXES.INBOX // Force to inbox so it shows up in main view
+    };
+    
     usedCodes.push(signature);
     localStorage.setItem(USED_CODES_KEY, JSON.stringify(usedCodes));
     
-    setEmails(prev => [email, ...prev]);
+    setEmails(prev => {
+      // Check if already exists to prevent duplicates
+      if (prev.find(e => e.id === importedEmail.id)) return prev;
+      return [importedEmail, ...prev];
+    });
+    
     alert(`📬 Email received!\n⚠️ This email is now self-destructed - once you close it, it cannot be re-imported.`);
   }, []);
 

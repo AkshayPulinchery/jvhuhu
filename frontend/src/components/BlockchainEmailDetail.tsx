@@ -32,7 +32,7 @@ export function BlockchainEmailDetail({ selectedId }: EmailDetailProps) {
   }, []);
 
   const email: BlockchainEmail | undefined = emails.find((e: BlockchainEmail) => e.id === selectedId);
-  const isSentByMe = email?.from.toLowerCase() === address?.toLowerCase();
+  const isSentByMe = email && address ? email.from.toLowerCase() === address.toLowerCase() : false;
 
   // Auto-vaporize logic
   useEffect(() => {
