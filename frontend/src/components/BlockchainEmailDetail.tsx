@@ -58,15 +58,27 @@ export function BlockchainEmailDetail({ selectedId }: EmailDetailProps) {
     );
   }
 
-  const handleSummarize = () => {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  const handleSummarize = async () => {
     setIsGenerating(true);
     setSummary(null);
-    setTimeout(() => {
-      const wordCount = email.body.split(/\s+/).length;
-      const preview = email.body.substring(0, 100);
-      setSummary(`TL;DR (${wordCount} words): ${preview}... This is a blockchain-encrypted message from ${shortenAddress(email.from)}.`);
+    try {
+      const resp = await fetch(`${API_URL}/api/ai/summarize/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: email?.body || '' })
+      });
+      const data = await resp.json();
+      if (data.summary) {
+        setSummary(data.summary);
+      }
+    } catch (e) {
+      console.error(e);
+      setSummary("Failed to generate AI summary. Please try again later.");
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
 
   return (

@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 
 from .services import generate_email, rewrite_email, summarize_email, spam_check
 
@@ -12,7 +12,7 @@ class GenerateEmailView(APIView):
     Body: { "prompt": "...", "tone": "formal" }
     Returns: { "subject": "...", "body": "..." }
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         prompt = request.data.get('prompt', '').strip()
@@ -30,7 +30,7 @@ class RewriteEmailView(APIView):
     Body: { "text": "...", "tone": "professional" }
     Returns: { "rewritten": "..." }
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         text = request.data.get('text', '').strip()
@@ -51,7 +51,7 @@ class SummarizeEmailView(APIView):
     Note: The frontend decrypts the email first, then sends the plaintext here.
     This text is NOT stored anywhere — it is processed and discarded.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         text = request.data.get('text', '').strip()
@@ -70,7 +70,7 @@ class SpamCheckView(APIView):
 
     Note: Same as summarize — text is processed in memory and never stored.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         text = request.data.get('text', '').strip()

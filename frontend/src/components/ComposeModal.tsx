@@ -37,7 +37,7 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
   const handleWriteWithAI = async () => {
     setIsGenerating(true);
     try {
-      const resp = await fetch(`${API_URL}/api/ai/generate/`, {
+      const resp = await fetch(`${API_URL}/api/ai/generate-email/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: subject || 'General inquiry', tone })
