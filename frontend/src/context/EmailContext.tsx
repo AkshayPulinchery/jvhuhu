@@ -4,25 +4,39 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { useAccount, useWalletClient } from 'wagmi';
 import { Contract, ethers } from 'ethers';
 
+import { QuantumCrypto } from '@/lib/quantum_crypto';
+
 declare const Fhevmjs: any;
 
 const SEPOLIA_CHAIN_ID = 11155111;
 const CONTRACT_ADDRESS = '0xCB45011ca6B8CDce01792CBB9B4c999479E94a0E';
+const QUANTUM_SEED = "PLANCK_CONSTANT_6.626";
 
 const DEMO_EMAILS: BlockchainEmail[] = [
-  { id: 1, from: '0x742d35Cc6634C0532925a3b844Bc9e7525a806B3', to: '', subject: 'Welcome to QuantumMail!', body: 'This is a demo email in our Web3 email app. Connect your wallet to send real encrypted emails on the blockchain!', threadId: 0, mailbox: 0, timestamp: Date.now() - 3600000 },
-  { id: 2, from: '0x742d35Cc6634C0532925a3b844Bc9e7525a806B3', to: '', subject: 'Hackathon Submission', body: 'Please finalize your submission. The deadline is approaching!', threadId: 0, mailbox: 0, timestamp: Date.now() - 7200000 },
+  { id: 1, from: '0x742d35Cc6634C0532925a3b844Bc9e7525a806B3', to: '', subject: 'Welcome to CuteMail!', body: 'This is a demo email in our Web3 email app. Connect your wallet to send real encrypted emails on the blockchain!', threadId: 0, mailbox: 0, timestamp: Date.now() - 3600000, isQuantum: false },
+  { id: 2, from: '0x742d35Cc6634C0532925a3b844Bc9e7525a806B3', to: '', subject: 'Quantum Security Test', body: 'This is a test of the new quantum-inspired encryption system.', threadId: 0, mailbox: 0, timestamp: Date.now() - 7200000, isQuantum: true },
 ];
 
 function encodeEmail(email: BlockchainEmail): string {
   const signature = Math.random().toString(36).substr(2, 12);
-  const dataWithSig = { ...email, signature, used: false };
-  return btoa(JSON.stringify(dataWithSig));
+  const dataToEncode = { ...email, signature, used: false };
+  
+  // If quantum, we encrypt the body again with the quantum formula
+  if (email.isQuantum) {
+    dataToEncode.body = QuantumCrypto.encrypt(email.body, QUANTUM_SEED);
+    dataToEncode.subject = `[QUANTUM] ${email.subject}`;
+  }
+  
+  return btoa(JSON.stringify(dataToEncode));
 }
 
 function decodeEmail(code: string): { email: BlockchainEmail | null; signature: string | null; used: boolean } {
   try {
     const data = JSON.parse(atob(code));
+    if (data.isQuantum) {
+      data.body = QuantumCrypto.decrypt(data.body, QUANTUM_SEED);
+      data.subject = data.subject.replace('[QUANTUM] ', '');
+    }
     return { email: data, signature: data.signature, used: data.used };
   } catch {
     return { email: null, signature: null, used: false };
@@ -70,7 +84,7 @@ export const BOXES = {
   READ: 6,
 } as const;
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://10.10.23.105:8080';
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://10.253.181.154:8080';
 let ws: WebSocket | null = null;
 
 export interface BlockchainEmail {
@@ -82,13 +96,14 @@ export interface BlockchainEmail {
   threadId: number;
   mailbox: number;
   timestamp: number;
+  isQuantum?: boolean;
 }
 
 interface EmailContextType {
   emails: BlockchainEmail[];
   loading: boolean;
   error: string | null;
-  sendEmail: (to: string, subject: string, body: string) => Promise<string | void>;
+  sendEmail: (to: string, subject: string, body: string, isQuantum?: boolean) => Promise<string | void>;
   reply: (threadId: number, subject: string, body: string) => Promise<void>;
   moveEmails: (mailIds: number[], box: number) => Promise<void>;
   refresh: () => Promise<void>;
@@ -349,7 +364,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
     }
   }, [walletClient, address, fetchEmails]);
 
-  const sendEmail = useCallback(async (to: string, subject: string, body: string) => {
+  const sendEmail = useCallback(async (to: string, subject: string, body: string, isQuantum: boolean = false) => {
     if (getDemoMode()) {
       const userId = getUserId();
       
@@ -362,6 +377,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
         threadId: 0,
         mailbox: BOXES.SENT,
         timestamp: Date.now(),
+        isQuantum: isQuantum
       };
       setEmails(prev => [mockEmail, ...prev]);
       setLoading(false);
@@ -479,6 +495,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (getDemoMode()) {
+      refresh();
       return;
     }
     
@@ -487,7 +504,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
         refresh();
       }).catch(console.error);
     }
-  }, [isConnected, walletClient, address]);
+  }, [isConnected, walletClient, address, refresh]);
 
   return (
     <EmailContext.Provider value={{ 

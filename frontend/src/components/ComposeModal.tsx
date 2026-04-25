@@ -21,10 +21,12 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isQuantum, setIsQuantum] = useState(true);
   const [demoMode, setDemoMode] = useState(true);
   const [sentCode, setSentCode] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
-  
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
   const { isConnected } = useAccount();
   const { sendEmail } = useEmails();
 
@@ -32,21 +34,44 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
     setDemoMode(getDemoMode());
   }, []);
 
-  const handleWriteWithAI = () => {
+  const handleWriteWithAI = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      setBody(`Dear ${to || 'Recipient'},\n\nI hope this email finds you well.\n\n[AI Generated Content for: ${subject || 'General inquiry'}]\n\nBest regards,\nCuteMail User`);
+    try {
+      const resp = await fetch(`${API_URL}/api/ai/generate/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: subject || 'General inquiry', tone })
+      });
+      const data = await resp.json();
+      if (data.body) {
+        setBody(data.body);
+        if (data.subject && !subject) setSubject(data.subject);
+      }
+    } catch (e) {
+      console.error(e);
+      // Fallback
+      setBody(`Dear ${to || 'Recipient'},\n\n[AI Generation failed, using local template]\n\nBest regards,\nCuteMail User`);
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
 
-  const handleRewriteTone = () => {
+  const handleRewriteTone = async () => {
     if (!body) return;
     setIsGenerating(true);
-    setTimeout(() => {
-      setBody(`[${tone} Rewrite]: \n${body}`);
+    try {
+      const resp = await fetch(`${API_URL}/api/ai/rewrite/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: body, tone })
+      });
+      const data = await resp.json();
+      if (data.rewritten) setBody(data.rewritten);
+    } catch (e) {
+      console.error(e);
+    } finally {
       setIsGenerating(false);
-    }, 1000);
+    }
   };
 
   const handleSend = async () => {
@@ -63,7 +88,7 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
     setError(null);
     
     try {
-      const result = await sendEmail(to, subject, body);
+      const result = await sendEmail(to, subject, body, isQuantum);
       if (demoMode && typeof result === 'string') {
         setSentCode(result);
       } else {
@@ -228,7 +253,9 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
                 <div className="bg-white border-[4px] border-black p-6 flex flex-col items-center gap-4 shadow-[8px_8px_0_0_black]">
                   <Loader2 className="w-10 h-10 animate-spin text-black" strokeWidth={3} />
                   <span className="text-xl uppercase font-black">
-                    {isSending ? 'Encrypting with Kyber...' : 'Consulting Neural Grid...'}
+                    {isSending 
+                      ? (isQuantum ? 'Projecting Quantum Phase...' : 'Encrypting with Kyber...') 
+                      : 'Consulting Neural Grid...'}
                   </span>
                 </div>
               </motion.div>
@@ -238,9 +265,23 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
 
         {!sentCode && (
           <div className="p-4 border-t-[4px] border-black bg-gray-100 flex justify-between items-center">
-            <p className="text-sm font-bold text-gray-500">
-              {demoMode ? '🔒 Demo Mode (No ETH)' : '🔒 FHE Encrypted (Sepolia)'}
-            </p>
+            <div className="flex items-center gap-4">
+              <label 
+                className={cn(
+                  "flex items-center gap-2 cursor-pointer p-2 border-[2px] border-black font-bold text-xs select-none transition-colors",
+                  isQuantum ? "bg-purple-300" : "bg-white"
+                )}
+              >
+                <input 
+                  type="checkbox" 
+                  className="hidden" 
+                  checked={isQuantum}
+                  onChange={() => setIsQuantum(!isQuantum)}
+                />
+                {isQuantum ? '⚛️ QUANTUM ON' : '⚛️ QUANTUM OFF'}
+              </label>
+            </div>
+            
             <button 
               className="bg-[var(--color-retro-green)] px-6 py-3 font-black uppercase flex items-center gap-2 border-[3px] border-black shadow-[4px_4px_0_0_black] active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-50"
               onClick={handleSend}

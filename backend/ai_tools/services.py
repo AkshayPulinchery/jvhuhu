@@ -172,3 +172,33 @@ def spam_check(text: str) -> dict:
         "confidence": 5,
         "reason": "No obvious spam or phishing indicators detected.",
     }
+
+
+# ---------------------------------------------------------------------------
+# Qwen / HuggingFace Integration
+# ---------------------------------------------------------------------------
+
+import requests
+
+def analyze_with_qwen(text: str) -> dict:
+    """Uses Hugging Face API to analyze email with Qwen model."""
+    qwen_key = getattr(settings, 'QWEN_KEY', None)
+    if not qwen_key:
+        return {"analysis": "Qwen key not configured. [Mock] This email seems important."}
+
+    API_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct"
+    headers = {"Authorization": f"Bearer {qwen_key}"}
+
+    payload = {
+        "inputs": f"<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\nAnalyze this email and give a 1-sentence summary of its hidden intent: {text}<|im_end|>\n<|im_start|>assistant\n",
+        "parameters": {"max_new_tokens": 100}
+    }
+
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload)
+        result = response.json()
+        if isinstance(result, list) and len(result) > 0:
+            return {"analysis": result[0].get('generated_text', '').split('assistant\n')[-1].strip()}
+        return {"analysis": str(result)}
+    except Exception as e:
+        return {"analysis": f"Error calling Qwen: {str(e)}"}

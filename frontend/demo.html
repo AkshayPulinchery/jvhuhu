@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantumMail Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --color-retro-yellow: #FFE600;
+            --color-retro-pink: #FF6B9D;
+            --color-retro-blue: #00D4FF;
+            --color-retro-green: #00FF88;
+            --color-retro-bg: #FFF8E7;
+        }
+        body { font-family: system-ui, sans-serif; background: var(--color-retro-bg); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="flex items-center justify-between p-4 bg-white border-4 border-black">
+        <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-yellow-400 border-4 border-black shadow-[4px_4px_0_0_black] flex items-center justify-center text-2xl font-black">✉</div>
+            <span class="text-2xl font-black uppercase">QuantumMail</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="copyId()" id="userId" class="px-3 py-2 border-4 border-black font-bold text-sm bg-gray-100 cursor-pointer hover:bg-gray-200">ID: ---</button>
+            <span class="px-3 py-2 bg-green-500 text-white font-bold border-4 border-black">DEMO</span>
+        </div>
+    </nav>
+
+    <main class="flex h-[calc(100vh-80px)]">
+        <div class="w-[400px] border-r-4 border-black bg-white flex flex-col">
+            <div class="flex border-b-4 border-black">
+                <button onclick="showImport()" class="px-4 py-3 border-r-4 border-black hover:bg-green-400 font-bold">IMPORT</button>
+                <button class="flex-1 py-3 font-black uppercase bg-yellow-400">Inbox</button>
+            </div>
+            
+            <div id="importSection" class="hidden p-4 border-b-4 border-black bg-gray-100">
+                <input id="importCode" type="text" placeholder="Paste code here..." class="w-full p-3 border-4 border-black text-sm font-mono">
+                <button onclick="importEmail()" class="mt-2 w-full bg-green-500 text-white font-bold py-3 border-4 border-black">Import Email</button>
+            </div>
+
+            <div id="emailList" class="flex-1 p-4 overflow-y-auto flex flex-col gap-2">
+                <div class="text-center text-gray-500 p-8">No emails yet - send one!</div>
+            </div>
+        </div>
+
+        <div class="flex-1 p-8 flex items-center justify-center">
+            <div id="emailDetail" class="text-center text-gray-400 text-xl font-black border-4 border-dashed border-gray-300 p-12 w-full max-w-2xl">
+                Select an email to read
+            </div>
+        </div>
+    </main>
+
+    <div id="composeModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4">
+        <div class="bg-white border-4 border-black shadow-[8px_8px_0_0_black] max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <div class="bg-yellow-400 p-4 border-b-4 border-black flex justify-between items-center">
+                <h2 class="font-black uppercase text-xl">New Email</h2>
+                <button onclick="closeCompose()" class="font-black text-2xl hover:text-red-500">×</button>
+            </div>
+            <div class="p-6 flex flex-col gap-4">
+                <input id="toInput" type="text" placeholder="To: (paste recipient ID)" class="border-4 border-black p-3 font-medium">
+                <input id="subjectInput" type="text" placeholder="Subject" class="border-4 border-black p-3 font-bold">
+                <textarea id="bodyInput" placeholder="Your message..." class="flex-1 min-h-[250px] border-4 border-black p-4 font-mono resize-none"></textarea>
+            </div>
+            <div class="p-6 border-t-4 border-black bg-gray-100 flex justify-between items-center">
+                <span class="text-sm font-bold text-gray-500">One-time use • Self-destructs after reading</span>
+                <button onclick="sendEmail()" class="bg-green-500 px-8 py-3 font-black uppercase border-4 border-black shadow-[4px_4px_0_0_black]">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="openCompose()" class="fixed bottom-8 right-8 w-16 h-16 bg-pink-500 text-white text-3xl font-black border-4 border-black shadow-[6px_6px_0_0_black] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">+</button>
+
+    <script>
+        let userId = 'demo_' + Math.random().toString(36).substr(2, 6);
+        document.getElementById('userId').textContent = 'ID: ' + userId;
+        
+        let emails = [];
+        let usedCodes = JSON.parse(localStorage.getItem('qm_usedCodes') || '[]');
+        
+        function copyId() {
+            navigator.clipboard.writeText(userId);
+            alert('ID copied: ' + userId + '\nShare this to receive emails!');
+        }
+        
+        function showImport() {
+            document.getElementById('importSection').classList.toggle('hidden');
+        }
+        
+        function importEmail() {
+            const code = document.getElementById('importCode').value.trim();
+            if (!code) return alert('Paste a code first!');
+            
+            try {
+                const data = JSON.parse(atob(code));
+                
+                if (data.to !== userId && data.to !== 'all') {
+                    return alert('This email is for: ' + data.to + '\nNot for you!');
+                }
+                
+                if (usedCodes.includes(data.signature)) {
+                    return alert('⚠️ This email was already used!');
+                }
+                
+                usedCodes.push(data.signature);
+                localStorage.setItem('qm_usedCodes', JSON.stringify(usedCodes));
+                
+                emails.unshift(data);
+                renderEmails();
+                document.getElementById('importCode').value = '';
+                document.getElementById('importSection').classList.add('hidden');
+                alert('📬 Email received from ' + data.from + '!');
+            } catch(e) {
+                alert('Invalid code - check and try again');
+            }
+        }
+        
+        function renderEmails() {
+            const list = document.getElementById('emailList');
+            if (emails.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-500 p-8">No emails yet</div>';
+                return;
+            }
+            list.innerHTML = emails.map((email, i) => `
+                <button onclick="selectEmail(${i})" class="text-left p-4 border-4 border-black bg-white hover:bg-yellow-50 shadow-[4px_4px_0_0_black] flex flex-col gap-1">
+                    <div class="font-black text-sm">From: ${email.from.substring(0,12)}...</div>
+                    <h4 class="font-bold text-base">${email.subject}</h4>
+                    <p class="text-sm text-gray-600 truncate">${email.body.substring(0,40)}...</p>
+                </button>
+            `).join('');
+        }
+        
+        function selectEmail(i) {
+            const email = emails[i];
+            document.getElementById('emailDetail').innerHTML = `
+                <div class="text-left w-full">
+                    <div class="text-sm text-gray-500 mb-4">From: ${email.from}</div>
+                    <h3 class="text-2xl font-black mb-4">${email.subject}</h3>
+                    <p class="whitespace-pre-wrap font-mono">${email.body}</p>
+                </div>
+            `;
+        }
+        
+        function openCompose() {
+            document.getElementById('composeModal').classList.remove('hidden');
+        }
+        
+        function closeCompose() {
+            document.getElementById('composeModal').classList.add('hidden');
+        }
+        
+        function sendEmail() {
+            const to = document.getElementById('toInput').value.trim();
+            const subject = document.getElementById('subjectInput').value.trim();
+            const body = document.getElementById('bodyInput').value.trim();
+            
+            if (!to || !subject || !body) return alert('Fill all fields!');
+            
+            const email = {
+                from: userId,
+                to: to,
+                subject: subject,
+                body: body,
+                signature: Math.random().toString(36).substr(2, 12),
+                timestamp: Date.now()
+            };
+            
+            const code = btoa(JSON.stringify(email));
+            
+            navigator.clipboard.writeText(code);
+            alert('📧 Email code created & copied!\n\nSend this to ' + to + ':\n\n' + code + '\n\nCode copied to clipboard!');
+            
+            document.getElementById('toInput').value = '';
+            document.getElementById('subjectInput').value = '';
+            document.getElementById('bodyInput').value = '';
+            closeCompose();
+        }
+    </script>
+</body>
+</html>

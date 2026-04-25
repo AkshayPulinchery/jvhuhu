@@ -22,6 +22,10 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-replace-this-before-deploy
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# AI API Keys
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+QWEN_KEY = os.getenv('QWEN_KEY')
+
 # APPS
 INSTALLED_APPS = [
     'django.contrib.admin',

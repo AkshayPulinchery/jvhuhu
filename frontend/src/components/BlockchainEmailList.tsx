@@ -32,7 +32,10 @@ export function BlockchainEmailList({ selectedId, setSelectedId, folder = 'inbox
     return true;
   });
 
-  if (!isConnected) {
+  // Check if we are in demo mode from local storage
+  const isDemo = typeof window !== 'undefined' && localStorage.getItem('demoMode') !== 'false';
+
+  if (!isConnected && !isDemo) {
     return (
       <div className="flex flex-col h-full border-r-[4px] border-black bg-white">
         <div className="flex-1 flex items-center justify-center p-8">
@@ -82,10 +85,11 @@ export function BlockchainEmailList({ selectedId, setSelectedId, folder = 'inbox
       <div className="flex border-b-[4px] border-black font-black uppercase text-sm">
         <button 
           onClick={() => setShowImport(!showImport)}
-          className="p-2 border-r-[4px] border-black hover:bg-green-400 transition-colors"
+          className="p-3 border-r-[4px] border-black hover:bg-green-400 transition-colors flex items-center gap-2 font-black"
           title="Import email code"
         >
-          <Download size={16} />
+          <Download size={18} />
+          <span className="hidden lg:inline text-xs">IMPORT</span>
         </button>
         {['All', 'Sent'].map((tab) => (
           <button 
@@ -155,9 +159,15 @@ export function BlockchainEmailList({ selectedId, setSelectedId, folder = 'inbox
         {filteredEmails.length === 0 && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="p-8 text-center font-bold text-gray-500"
+            className="p-8 text-center flex flex-col gap-4"
           >
-            No emails yet. Send one to get started!
+            <p className="font-bold text-gray-500">No emails yet.</p>
+            <button 
+              onClick={() => setShowImport(true)}
+              className="px-4 py-2 bg-green-400 border-[3px] border-black font-black uppercase shadow-[4px_4px_0_0_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
+            >
+              Import from Code
+            </button>
           </motion.div>
         )}
       </motion.div>
