@@ -1,12 +1,48 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Mail } from 'lucide-react';
+import { Mail, Wifi, WifiOff, Copy, Check } from 'lucide-react';
 import Link from 'next/link';
 import { brutalBorder, brutalShadowNoHover } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
+function getDemoMode(): boolean {
+  if (typeof window === 'undefined') return true;
+  const saved = localStorage.getItem('demoMode');
+  return saved !== 'false';
+}
+
+function getUserId(): string {
+  const saved = localStorage.getItem('userId');
+  if (saved) return saved;
+  const newId = 'user_' + Math.random().toString(36).substr(2, 9);
+  localStorage.setItem('userId', newId);
+  return newId;
+}
+
 export function Navbar() {
+  const [demoMode, setDemoMode] = useState(true);
+  const [userId, setUserId] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setDemoMode(getDemoMode());
+    setUserId(getUserId());
+  }, []);
+
+  const toggleMode = () => {
+    const newMode = !demoMode;
+    setDemoMode(newMode);
+    localStorage.setItem('demoMode', String(newMode));
+  };
+
+  const copyId = () => {
+    navigator.clipboard.writeText(userId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <nav className={cn(
       "flex items-center justify-between p-4 bg-[var(--color-retro-white)]",
@@ -27,7 +63,27 @@ export function Navbar() {
       </Link>
 
       <div className="flex items-center gap-4">
-        {/* We can customize the ConnectButton slightly via pseudo elements or wrappers but RainbowKit handles it generally. */}
+        <button
+          onClick={copyId}
+          className="flex items-center gap-2 px-3 py-2 border-[3px] border-black font-bold text-sm bg-white hover:bg-gray-100"
+          title="Click to copy your ID"
+        >
+          {copied ? <Check size={16} /> : <Copy size={16} />}
+          ID: {userId}
+        </button>
+        
+        <button
+          onClick={toggleMode}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 border-[3px] border-black font-bold text-sm",
+            demoMode 
+              ? "bg-[var(--color-retro-green)] hover:bg-green-500" 
+              : "bg-[var(--color-retro-pink)] hover:bg-pink-500"
+          )}
+        >
+          {demoMode ? <Wifi size={16} /> : <WifiOff size={16} />}
+          {demoMode ? 'DEMO' : 'CHAIN'}
+        </button>
         <div className={cn(brutalBorder, brutalShadowNoHover, "bg-[var(--color-retro-blue)] transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none")}>
           <ConnectButton showBalance={false} chainStatus="none" accountStatus="avatar" />
         </div>
