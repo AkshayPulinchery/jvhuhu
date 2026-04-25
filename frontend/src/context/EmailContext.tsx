@@ -70,7 +70,7 @@ export const BOXES = {
   READ: 6,
 } as const;
 
-const WS_URL = 'ws://10.10.23.105:8080';
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://10.10.23.105:8080';
 let ws: WebSocket | null = null;
 
 export interface BlockchainEmail {
