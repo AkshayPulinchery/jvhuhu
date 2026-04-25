@@ -1,0 +1,22 @@
+'use client';
+
+import { Navbar } from '@/components/Navbar';
+import { Sidebar } from '@/components/Sidebar';
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col h-screen overflow-hidden">
+      <Navbar />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar className="w-64 flex-shrink-0" />
+        <main className="flex-1 overflow-hidden">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
