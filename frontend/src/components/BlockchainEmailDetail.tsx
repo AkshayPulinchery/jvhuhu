@@ -10,26 +10,16 @@ import { Bomb, Rocket } from 'lucide-react';
 
 interface EmailDetailProps {
   selectedId: number | null;
+  isDemo?: boolean;
 }
 
-function getDemoMode(): boolean {
-  if (typeof window === 'undefined') return true;
-  const saved = localStorage.getItem('demoMode');
-  return saved !== 'false';
-}
-
-export function BlockchainEmailDetail({ selectedId }: EmailDetailProps) {
+export function BlockchainEmailDetail({ selectedId, isDemo = false }: EmailDetailProps) {
   const { emails, loading, deleteEmail } = useEmails();
   const { address } = useAccount();
   const [summary, setSummary] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDestroying, setIsDestroying] = useState(false);
-  const [isDemo, setIsDemo] = useState(true);
   const [lastViewedDestructive, setLastViewedDestructive] = useState<number | null>(null);
-
-  useEffect(() => {
-    setIsDemo(getDemoMode());
-  }, []);
 
   const email: BlockchainEmail | undefined = emails.find((e: BlockchainEmail) => e.id === selectedId);
   const isSentByMe = email && address ? email.from.toLowerCase() === address.toLowerCase() : false;

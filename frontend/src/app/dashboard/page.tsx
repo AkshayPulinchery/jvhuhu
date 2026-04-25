@@ -43,7 +43,7 @@ export default function DashboardPage() {
       </div>
       <div className="flex-1 h-full min-w-0">
         {(isConnected || isDemo) ? (
-          <BlockchainEmailDetail selectedId={selectedId} />
+          <BlockchainEmailDetail selectedId={selectedId} isDemo={isDemo} />
         ) : (
           <EmailDetail selectedId={selectedId} />
         )}
